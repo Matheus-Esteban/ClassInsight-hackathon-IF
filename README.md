@@ -2,7 +2,7 @@
 
 Este projeto automatiza o fluxo de captura de áudio, transcrição e geração de inteligência pedagógica. Ele foi desenvolvido com foco em **Eficiência de Processos Acadêmicos**, permitindo que uma aula gravada seja convertida em relatórios técnicos para professores e guias de estudo para alunos.
 
-## 🛠️ 1. Configuração do Ambiente (venv)
+## 1. Configuração do Ambiente (venv)
 
 O projeto utiliza um Ambiente Virtual (venv) para isolar as dependências e garantir a portabilidade do software.
 
@@ -23,5 +23,20 @@ O projeto utiliza um Ambiente Virtual (venv) para isolar as dependências e gara
   ```bash
    pip install --upgrade pip
    pip install sounddevice numpy scipy whisper-openai pydub groq fpdf2 python-dotenv
+   ```
+## 2. Como Executar:
+
+**Configuração de Credenciais**
+
+Crie um arquivo ```.env``` na raiz do projeto com o seguinte conteúdo:
+ ```bash
+   GROQ_API_KEY=sua_chave_aqui
+   EMAIL_USER=seu_email@gmail.com
+   EMAIL_PASS=sua_senha_de_app_gmail
+   ```
+**Iniciando o Processo**
+Execute o script principal:
+ ```bash
+ python main.py
    ```
 
