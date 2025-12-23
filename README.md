@@ -1,4 +1,4 @@
-# Sistema de Transcrição e Análise de Aulas - Hackathon IF
+# Transcrição e Análise de Aulas - Hackathon IF
 
 Este projeto automatiza o fluxo de captura de áudio, transcrição e geração de inteligência pedagógica. Ele foi desenvolvido com foco em **Eficiência de Processos Acadêmicos**, permitindo que uma aula gravada seja convertida em relatórios técnicos para professores e guias de estudo para alunos.
 
@@ -13,3 +13,15 @@ O projeto utiliza um Ambiente Virtual (venv) para isolar as dependências e gara
    ```bash
    sudo apt-get update
    sudo apt-get install ffmpeg libportaudio2 python3-venv
+   ```
+2. **Criação do Ambiente Virtual:** Na pasta raiz do projeto, execute:
+  ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+3. **Instalação das Bibliotecas Python:** Com o  ```.venv ``` ativo, instale os pacotes necessários:
+  ```bash
+   pip install --upgrade pip
+   pip install sounddevice numpy scipy whisper-openai pydub groq fpdf2 python-dotenv
+   ```
+
