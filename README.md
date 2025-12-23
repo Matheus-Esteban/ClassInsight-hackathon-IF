@@ -6,7 +6,7 @@ Este projeto automatiza o fluxo de captura de áudio, transcrição e geração 
 
 O projeto utiliza um Ambiente Virtual (venv) para isolar as dependências e garantir a portabilidade do software.
 
-### Passos para instalação no Linux Mint:
+### Passos para instalação no Linux (Debion):
 
 1. **Dependências do Sistema Operacional:**
    Abra o terminal e instale o FFmpeg (para processar áudio) e o PortAudio:
