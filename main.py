@@ -126,14 +126,103 @@ class Hackathon:
         # 1. Relatorio do Professor (Foco em didatica e pontos-chave)
         res_prof = self.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": f"Aja como um consultor pedagogico. Gere um relatorio tecnico da aula para o PROFESSOR, destacando os temas abordados e sugestoes de melhoria: {texto[:10000]}"}]
+            messages=[{"role": "user", "content": f"Você é um especialista em pedagogia e análise educacional.
+Seu objetivo é analisar tecnicamente a transcrição de uma aula do ensino médio
+e gerar um relatório formal para o PROFESSOR.
+
+REGRAS IMPORTANTES:
+- NÃO invente conteúdos que não estejam presentes na transcrição.
+- Ignore erros de fala, repetições, informalidades e interrupções.
+- Perguntas de alunos devem ser consideradas apenas se contribuírem para o entendimento do conteúdo.
+- Preserve a sequência temporal da aula ao descrever a estrutura.
+- Use linguagem formal, clara e objetiva.
+- A aula pode ser de qualquer área do conhecimento.
+
+TAREFA:
+A partir da transcrição fornecida, produza um RELATÓRIO TÉCNICO contendo
+EXATAMENTE as seções abaixo:
+
+1. Identificação Geral da Aula
+   - Duração estimada
+   - Tipo de aula (expositiva)
+   - Público-alvo (Ensino Médio)
+
+2. Estrutura da Aula
+   - Descrição cronológica das etapas da aula
+   - Organização dos conteúdos ao longo do tempo
+
+3. Principais Conceitos Abordados
+   - Lista dos conceitos centrais explicados
+   - Breve descrição de cada conceito, com base no que foi dito em aula
+
+4. Pontos Fortes da Aula
+   - Aspectos positivos da condução didática
+   - Clareza, exemplos, sequência lógica, interação relevante
+
+5. Pontos Fracos ou Oportunidades de Melhoria
+   - Dificuldades percebidas
+   - Momentos de possível confusão, dispersão ou excesso de conteúdo
+
+6. Sugestões Pedagógicas
+   - Sugestões CONCRETAS e aplicáveis
+   - Foco em:
+     • Didática
+     • Organização do conteúdo
+     • Engajamento dos alunos
+     • Avaliação e aprendizagem
+
+FORMATO:
+- Texto estruturado em tópicos e parágrafos curtos
+- Não utilize emojis
+- Não inclua opinião pessoal fora do escopo pedagógico
+
+TRANSCRIÇÃO DA AULA: {texto[:10000]}"}]
         )
         conteudo_prof = res_prof.choices[0].message.content
 
         # 2. Guia do Aluno (Foco em resumo e exercicios)
         res_aluno = self.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": f"Gere um guia de estudos para o ALUNO com um resumo simplificado da aula e 3 exercicios de fixacao sobre o tema: {texto[:10000]}"}]
+            messages=[{"role": "user", "content": f"Você é um professor experiente do ensino médio.
+Seu objetivo é criar um GUIA DE ESTUDOS PARA ALUNOS
+com base na transcrição de uma aula expositiva.
+
+REGRAS IMPORTANTES:
+- NÃO invente conteúdos que não estejam presentes na transcrição.
+- Ignore erros de fala, repetições, informalidades e interrupções.
+- Preserve a sequência lógica e pedagógica do conteúdo.
+- Use linguagem clara, acessível e adequada ao ensino médio.
+- O guia deve ajudar o aluno a estudar sozinho.
+
+TAREFA:
+Com base na transcrição fornecida, produza um GUIA DE ESTUDOS contendo
+EXATAMENTE as seções abaixo:
+
+1. Tema da Aula
+   - Identifique claramente o tema central trabalhado
+
+2. Resumo da Aula
+   - Resumo moderadamente técnico
+   - Explique os principais conceitos com clareza
+   - Use exemplos simples, quando apropriado
+   - Evite jargões excessivos
+
+3. Conceitos-Chave
+   - Lista dos conceitos mais importantes da aula
+   - Breve explicação de cada um
+
+4. Exercícios de Fixação
+   - Crie exatamente 3 exercícios
+   - Misture exercícios conceituais e práticos
+   - Forneça APENAS o enunciado (sem gabarito)
+
+FORMATO:
+- Linguagem direta e didática
+- Estrutura organizada em tópicos
+- Não utilize emojis
+- Não inclua informações que não tenham sido abordadas na aula
+
+TRANSCRIÇÃO DA AULA: {texto[:10000]}"}]
         )
         conteudo_aluno = res_aluno.choices[0].message.content
 
