@@ -48,8 +48,9 @@ O sistema opera através de uma pipeline sequencial desenhada para maximizar a e
 ### A. Módulo de Gravação  
 * **Captura**: O sistema acessa o hardware de áudio via `sounddevice` com taxa de amostragem de 44.1kHz.
 * **Bufferização**: Os dados brutos são armazenados em uma `queue.Queue` (fila) em tempo real, técnica que evita a perda de pacotes de áudio enquanto o processador gerencia outras tarefas.
-* **Interrupção**: Comando de Voz: Uma thread secundária utiliza a biblioteca SpeechRecognition para monitorar em tempo real a palavra-chave "PARAR". Ao detectar o comando, o sistema sinaliza o encerramento da gravação via flag de sincronização.
-* Sinal de Hardware: Como redundância, o sistema suporta o encerramento via SIGINT (CTRL+C), garantindo que o buffer seja esvaziado (flushed) e o descritor de arquivo .wav seja fechado corretamente.
+* **Interrupção**:
+   * Comando de Voz: Uma thread secundária utiliza a biblioteca SpeechRecognition para monitorar em tempo real a palavra-chave "PARAR". Ao detectar o comando, o sistema sinaliza o encerramento da gravação via flag de sincronização.
+   * Sinal de Hardware: Como redundância, o sistema suporta o encerramento via SIGINT (CTRL+C), garantindo que o buffer seja esvaziado (flushed) e o descritor de arquivo .wav seja fechado corretamente.
 
 
 
