@@ -2,7 +2,18 @@
 
 Este projeto automatiza o fluxo de captura de áudio, transcrição e geração de inteligência pedagógica. Ele foi desenvolvido com foco em **Eficiência de Processos Acadêmicos**, permitindo que uma aula gravada seja convertida em relatórios técnicos para professores e guias de estudo para alunos.
 
-## 1. Configuração do Ambiente (venv)
+## 1. Ambiente de Testes e Validação em Hardware (Edge Computing)
+
+Para comprovar a premissa de alta eficiência e baixo consumo de recursos, o sistema passou por testes de estresse em um ambiente controlado que reproduz as restrições de infraestrutura presentes em várias instituições de ensino.
+
+### Detalhes da Unidade de Teste:
+* **Hardware:** Raspberry Pi 4 Model B (ou simulação por meio de VM Raspberry Pi OS).
+* **Arquitetura:** ARM64.
+* **Memória RAM:** 2GB LPDDR4 (utilizada em conjunto com a GPU).
+* **Sistema Operacional:** Raspberry Pi OS (Debian Bookworm) versão 64-bit Lite.
+
+
+## 2. Configuração do Ambiente (venv)
 
 O projeto utiliza um Ambiente Virtual (venv) para isolar as dependências e garantir a portabilidade do software.
 
@@ -41,7 +52,7 @@ Execute o script principal:
  python main.py
    ```
 
-## 2. Fluxo de Operação
+## 3. Fluxo de Operação
 
 O sistema foi arquitetado sob uma **pipeline sequencial e determinística**, otimizada para ambientes com restrições severas de hardware (dispositivos com 2GB de RAM).
 
@@ -74,7 +85,7 @@ Este módulo atua como o motor analítico do sistema, transformando dados brutos
 * **Idempotência e Cleanup**: O software emprega o bloco estrutural `finally` para garantir que, independentemente do êxito ou fracasso da execução, todos os arquivos temporários (`.wav`, `.md`, `.pdf`) sejam eliminados. Isso assegura a **idempotência do sistema**, mantendo o ambiente limpo para o próximo ciclo de uso.
 
 
-## 3. Análise de Resultados e Impacto Pedagógico
+## 4. Análise de Resultados e Impacto Pedagógico
 
 A execução do ClassInsight gera dois artefatos diferentes, cujos conteúdos provêm de um processamento semântico profundo, assegurando uma aplicação prática imediata para o ecossistema acadêmico.
 
@@ -89,5 +100,7 @@ Para o estudante, o sistema funciona como um assistente cognitivo que ajuda a re
 * **Síntese Inteligente:** Conversão de discursos repetitivos ou informais em conceitos técnicos claros e estruturados.
 * **Material de Revisão Personalizado:** O resumo produzido espelha precisamente o que foi abordado em sala de aula, estabelecendo uma conexão entre a apresentação oral e o material impresso.
 * **Avaliação Formativa:** Os exercícios de fixação são criados a partir dos exemplos práticos mencionados em sala de aula, fortalecendo a ligação entre a teoria apresentada e sua aplicação prática.
+
+
 
 
