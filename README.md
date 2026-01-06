@@ -12,7 +12,8 @@ O projeto utiliza um Ambiente Virtual (venv) para isolar as dependências e gara
    Abra o terminal e instale o FFmpeg (para processar áudio) e o PortAudio:
    ```bash
    sudo apt-get update
-   sudo apt-get install ffmpeg libportaudio2 python3-venv
+   sudo apt-get install ffmpeg libportaudio2 portaudio19-dev python3-pyaudio python3-venv -y
+   
    ```
 2. **Criação do Ambiente Virtual:** Na pasta raiz do projeto, execute:
   ```bash
@@ -22,7 +23,7 @@ O projeto utiliza um Ambiente Virtual (venv) para isolar as dependências e gara
 3. **Instalação das Bibliotecas Python:** Com o  ```.venv ``` ativo, instale os pacotes necessários:
   ```bash
    pip install --upgrade pip
-   pip install sounddevice numpy scipy whisper-openai pydub groq fpdf2 python-dotenv
+   pip install pyaudio speechrecognition sounddevice numpy scipy whisper-openai pydub groq fpdf2 python-dotenvv 
    ```
 ### Como Executar:
 
@@ -47,7 +48,8 @@ O sistema opera através de uma pipeline sequencial desenhada para maximizar a e
 ### A. Módulo de Gravação  
 * **Captura**: O sistema acessa o hardware de áudio via `sounddevice` com taxa de amostragem de 44.1kHz.
 * **Bufferização**: Os dados brutos são armazenados em uma `queue.Queue` (fila) em tempo real, técnica que evita a perda de pacotes de áudio enquanto o processador gerencia outras tarefas.
-* **Interrupção**: O encerramento ocorre via **CTRL + C** (sinal SIGINT), disparando o fechamento do fluxo de entrada e a persistência do arquivo `audio_projeto.wav` no disco de forma segura.
+* **Interrupção**: Comando de Voz: Uma thread secundária utiliza a biblioteca SpeechRecognition para monitorar em tempo real a palavra-chave "PARAR". Ao detectar o comando, o sistema sinaliza o encerramento da gravação via flag de sincronização.
+* Sinal de Hardware: Como redundância, o sistema suporta o encerramento via SIGINT (CTRL+C), garantindo que o buffer seja esvaziado (flushed) e o descritor de arquivo .wav seja fechado corretamente.
 
 
 
