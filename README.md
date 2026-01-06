@@ -58,9 +58,15 @@ O sistema foi arquitetado sob uma **pipeline sequencial e determinística**, oti
 * **Gerenciamento de Memória**: Após a transcrição de cada segmento, o sistema chama o `gc.collect()` (Garbage Collector) para obrigar a coleta de lixo e liberar ponteiros de memória.
 
 ### C. Módulo de Inteligência (Orquestração de Modelos de Linguagem)
-* **Tokenização e Rate Limiting**: O texto é segmentado para respeitar os limites de **12.000 TPM** (Tokens por Minuto) da API Groq, utilizando algoritmos de truncagem para evitar o estouro de *payload*.
-* **Análise Multidirecional**: Através de engenharia de prompt, a IA (Llama 3.3) gera simultaneamente o **Relatório Pedagógico** para o Professor e o **Guia de Estudos** para o Aluno.
-* **Resiliência de Cota**: Implementa pausas de segurança (*sleep*) entre requisições para operar dentro do limite gratuito de **100.000 TPD** (Tokens por Dia).
+
+Este módulo atua como o motor analítico do sistema, transformando dados brutos em conhecimento estruturado por meio de uma arquitetura de microsserviços em nuvem.
+
+* **Otimização de Contexto e Payload**: o texto transcrito passa por um processo de filtragem e truncagem inteligente (com limite de 15.000 caracteres), assegurando que esteja em conformidade com a janela de contexto do modelo e prevenindo erros de *413 Payload Too Large*.
+* **Gestão de Recursos Críticos (RAM)**: Antes de começar a orquestração da IA, o sistema realiza a liberação explícita do modelo Whisper da memória principal e chama o *Garbage Collector* (`gc.collect()`). Essa técnica é essencial para garantir a estabilidade do sistema em hardware com apenas 2GB de RAM, evitando problemas causados por *Memory Leak*.
+* **Engenharia de Prompt Multidirecional**: Emprega o modelo de última geração **Llama 3.3 (70B)** para conduzir uma análise em dois âmbitos pedagógicos diferentes:
+   * **Visão do Docente**: Concentrada na análise técnica, pedagógica e nas métricas de engajamento.
+   * **Visão do Discente**: Concentrada na síntese de conteúdo e recursos para fixação (aprendizagem ativa).
+* **Resiliência e Rate Limiting**: Adota um controle rigoroso de taxa para atender aos limites da API Groq (**12.000 TPM** / **100.000 TPD**). O sistema administra as cotas de requisição por meio de pausas estratégicas, assegurando a continuidade do serviço sem interrupções causadas por bloqueios de segurança do provedor.
 
 ### D. Módulo de Distribuição e Persistência Volátil
 * **Renderização de Documentos**: Utiliza a biblioteca `FPDF` para conversão de texto estruturado para PDF, aplicando sanitização de caracteres para garantir a integridade do documento final.
