@@ -7,10 +7,10 @@ Este projeto automatiza o fluxo de captura de áudio, transcrição e geração 
 Para comprovar a premissa de alta eficiência e baixo consumo de recursos, o sistema passou por testes de estresse em um ambiente controlado que reproduz as restrições de infraestrutura presentes em várias instituições de ensino.
 
 ### Detalhes da Unidade de Teste:
-* **Hardware:** Raspberry Pi 4 Model B (ou simulação por meio de VM Raspberry Pi OS).
-* **Arquitetura:** ARM64.
-* **Memória RAM:** 2GB LPDDR4 (utilizada em conjunto com a GPU).
-* **Sistema Operacional:** Raspberry Pi OS (Debian Bookworm) versão 64-bit Lite.
+* **Hardware:** OrangePI RV2 .
+* **Arquitetura:** RISC-V.
+* **Memória RAM:** 4GB LPDDR4.
+* **Sistema Operacional:** Ubuntu noble server linux 6.6.63.
 
 
 ## 2. Configuração do Ambiente (venv)
