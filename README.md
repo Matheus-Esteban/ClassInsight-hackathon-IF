@@ -13,6 +13,7 @@ Para comprovar a premissa de alta eficiência e baixo consumo de recursos, o sis
 * **Sistema Operacional:** Ubuntu noble server linux 6.6.63.
 
 
+
 ## 2. Configuração do Ambiente (venv)
 
 O projeto utiliza um Ambiente Virtual (venv) para isolar as dependências e garantir a portabilidade do software.
@@ -54,7 +55,7 @@ Execute o script principal:
 
 ## 3. Fluxo de Operação
 
-O sistema foi arquitetado sob uma **pipeline sequencial e determinística**, otimizada para ambientes com restrições severas de hardware (dispositivos com 2GB de RAM).
+O sistema foi arquitetado sob uma **pipeline sequencial e determinística**, otimizada para ambientes com restrições severas de hardware (dispositivos com 4GB de RAM).
 
 ### A. Módulo de Interrupção e Captura Multimodal
 * **Acesso ao Hardware**: o sistema cria um fluxo de áudio por meio da interface `sounddevice`, funcionando com uma taxa de amostragem de **44.2kHz** em canal mono, assegurando precisão para a transcrição subsequente.
@@ -64,7 +65,7 @@ O sistema foi arquitetado sob uma **pipeline sequencial e determinística**, oti
    * **Sinal de Hardware**: Como uma medida de redundância, o sistema permite o encerramento por meio do **SIGINT (CTRL+C)**, assegurando que o buffer seja esvaziado (*flushed*) e que o descritor de arquivo `.wav` seja fechado de forma adequada.
 
 ### B. Módulo de Transcrição (Processamento de Sinais)
-* **Segmentação Dinâmica (Chunking)**: Para funcionar dentro do limite de 2GB de RAM, o sistema divide o áudio em segmentos de 10 minutos (600.000ms) usando o `pydub`. Isso previne erros de *Out of Memory* (OOM) ao lidar com aulas longas.
+* **Segmentação Dinâmica (Chunking)**: Para funcionar dentro do limite de 4GB de RAM, o sistema divide o áudio em segmentos de 10 minutos (600.000ms) usando o `pydub`. Isso previne erros de *Out of Memory* (OOM) ao lidar com aulas longas.
 * **Inferência Local**: Emprega o motor **OpenAI Whisper (Modelo Small)**. A decodificação fonética é executada localmente com o parâmetro `fp16=False`, assegurando compatibilidade e redução do uso de memória em CPUs que não possuem suporte ao ponto flutuante de meia precisão.
 * **Gerenciamento de Memória**: Após transcrever cada segmento e ao término do módulo, o sistema realiza a liberação explícita do objeto do modelo e chama o `gc.collect()` para remover ponteiros de memória remanescentes.
 
@@ -73,7 +74,7 @@ O sistema foi arquitetado sob uma **pipeline sequencial e determinística**, oti
 Este módulo atua como o motor analítico do sistema, transformando dados brutos em conhecimento estruturado por meio de uma arquitetura de microsserviços em nuvem.
 
 * **Otimização de Contexto e Payload**: o texto transcrito passa por um processo de filtragem e truncagem inteligente (com limite de 15.000 caracteres), assegurando que esteja em conformidade com a janela de contexto do modelo e prevenindo erros de *413 Payload Too Large*.
-* **Gestão de Recursos Críticos (RAM)**: Antes de começar a orquestração da IA, o sistema realiza a liberação explícita do modelo Whisper da memória principal e chama o *Garbage Collector* (`gc.collect()`). Essa técnica é essencial para garantir a estabilidade do sistema em hardware com apenas 2GB de RAM, evitando problemas causados por *Memory Leak*.
+* **Gestão de Recursos Críticos (RAM)**: Antes de começar a orquestração da IA, o sistema realiza a liberação explícita do modelo Whisper da memória principal e chama o *Garbage Collector* (`gc.collect()`). Essa técnica é essencial para garantir a estabilidade do sistema em hardware com apenas 4GB de RAM, evitando problemas causados por *Memory Leak*.
 * **Engenharia de Prompt Multidirecional**: Emprega o modelo de última geração **Llama 3.3 (70B)** para conduzir uma análise em dois âmbitos pedagógicos diferentes:
    * **Visão do Docente**: Concentrada na análise técnica, pedagógica e nas métricas de engajamento.
    * **Visão do Discente**: Concentrada na síntese de conteúdo e recursos para fixação (aprendizagem ativa).
