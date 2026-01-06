@@ -43,30 +43,26 @@ Execute o script principal:
 
 ## 2. Fluxo de Operação
 
-O sistema opera através de uma pipeline sequencial desenhada para maximizar a eficiência em hardware com recursos limitados (2GB RAM).
+O sistema foi arquitetado sob uma **pipeline sequencial e determinística**, otimizada para ambientes com restrições severas de hardware (dispositivos com 2GB de RAM).
 
-### A. Módulo de Gravação  
-* **Captura**: O sistema acessa o hardware de áudio via `sounddevice` com taxa de amostragem de 44.1kHz.
-* **Bufferização**: Os dados brutos são armazenados em uma `queue.Queue` (fila) em tempo real, técnica que evita a perda de pacotes de áudio enquanto o processador gerencia outras tarefas.
-* **Interrupção**:
-   * Comando de Voz: Uma thread secundária utiliza a biblioteca SpeechRecognition para monitorar em tempo real a palavra-chave "PARAR". Ao detectar o comando, o sistema sinaliza o encerramento da gravação via flag de sincronização.
-   * Sinal de Hardware: Como redundância, o sistema suporta o encerramento via SIGINT (CTRL+C), garantindo que o buffer seja esvaziado (flushed) e o descritor de arquivo .wav seja fechado corretamente.
+### A. Módulo de Captura e Interrupção Multimodal
+* **Acesso ao Hardware**: o sistema cria um fluxo de áudio por meio da interface `sounddevice`, funcionando com uma taxa de amostragem que varia de 16 kHz a 44,1 kHz.
+* **Concorrência por Multithreading**: Para reduzir o *overhead* do processador, a captura emprega uma **Thread exclusiva** e uma estrutura de dados `queue.Queue`. Isso assegura que a gravação não apresente *jitter* (atraso) durante o monitoramento de comandos de voz pelo sistema.
+* **Interrupção Híbrida**:
+   * **Comando de Voz**: uma thread secundária usa a biblioteca `SpeechRecognition` para acompanhar a palavra-chave **"PARAR"** em tempo real. Quando o comando é identificado, o sistema indica o término da gravação por meio de um *flag* de sincronização.
+   * **Sinal de Hardware**: Como uma medida de redundância, o sistema permite o encerramento por meio do **SIGINT (CTRL+C)**, assegurando que o buffer seja esvaziado (*flushed*) e que o descritor de arquivo `.wav` seja fechado de forma adequada.
 
+### B. Módulo de Transcrição (Processamento de Sinais)
+* **Segmentação Dinâmica**: Para funcionar dentro do limite de 2GB de RAM, o sistema utiliza o fatiamento de áudio (*audio chunking*). Isso evita que ocorram erros de *Out of Memory* (OOM) em arquivos extensos.
+* **Inferência Local**: Emprega o motor **OpenAI Whisper**, executando a decodificação fonética de forma local para assegurar a privacidade dos dados acadêmicos e diminuir a latência da rede.
+* **Gerenciamento de Memória**: Após a transcrição de cada segmento, o sistema chama o `gc.collect()` (Garbage Collector) para obrigar a coleta de lixo e liberar ponteiros de memória.
 
+### C. Módulo de Inteligência (Orquestração de Modelos de Linguagem)
+* **Tokenização e Rate Limiting**: O texto é segmentado para respeitar os limites de **12.000 TPM** (Tokens por Minuto) da API Groq, utilizando algoritmos de truncagem para evitar o estouro de *payload*.
+* **Análise Multidirecional**: Através de engenharia de prompt, a IA (Llama 3.3) gera simultaneamente o **Relatório Pedagógico** para o Professor e o **Guia de Estudos** para o Aluno.
+* **Resiliência de Cota**: Implementa pausas de segurança (*sleep*) entre requisições para operar dentro do limite gratuito de **100.000 TPD** (Tokens por Dia).
 
-###  B. Módulo de Transcrição  
-* **Gestão de RAM**: O arquivo de áudio é fatiado em blocos (*chunks*) de 10 minutos para permitir o processamento em hardware.
-* **Inferência**: Utiliza o modelo **OpenAI Whisper** local para realizar a conversão de fala em texto de forma precisa.
-* **Otimização**: O sistema invoca explicitamente o `gc.collect()` (Garbage Collector) após o processamento de cada bloco para liberar memória RAM e consolidar o texto final em `resultado.md`.
-
-### C. Módulo de Inteligência  
-* **Arquitetura Map-Reduce**: O texto transcrito é segmentado para respeitar rigorosamente o limite de **12.000 tokens por minuto (TPM)** da API do Groq.
-* **Processamento Llama 3.3**: A inteligência artificial gera, em uma única execução lógica, uma análise pedagógica para o **Professor** e um guia de estudos estruturado para o **Aluno**.
-* **Controle de Cota**: Implementa pausas de segurança (*sleep*) entre requisições para operar dentro da folga de **100.000 tokens diários (TPD)** do plano gratuito.
-
-
-###  D. Módulo de Envio e Limpeza 
-* **Geração de PDF**: Os relatórios são renderizados utilizando a biblioteca `FPDF`, aplicando sanitização de caracteres para garantir a integridade do documento final.
-* **Protocolo SMTP**: A distribuição dos documentos é realizada via e-mail utilizando o protocolo SMTP com criptografia SSL (porta 465) para garantir a segurança da transmissão.
-* **Cleanup Final**: O uso do bloco estrutural `finally` garante que todos os arquivos temporários (`.wav`, `.md`, `.pdf`) sejam apagados automaticamente, assegurando a **idempotência do sistema** e a privacidade total dos dados acadêmicos.
-
+### D. Módulo de Distribuição e Persistência Volátil
+* **Renderização de Documentos**: Utiliza a biblioteca `FPDF` para conversão de texto estruturado para PDF, aplicando sanitização de caracteres para garantir a integridade do documento final.
+* **Segurança na Transmissão**: A distribuição utiliza o protocolo **SMTP sobre TLS/SSL** (Porta 465), garantindo a integridade e confidencialidade dos arquivos durante o tráfego na rede.
+* **Idempotência e Cleanup**: Através de blocos estruturais `finally`, o sistema executa a limpeza automática de arquivos temporários (`.wav`, `.md`, `.pdf`), garantindo que o dispositivo retorne ao estado original de armazenamento após cada ciclo (idempotência).
