@@ -8,6 +8,8 @@ from email.message import EmailMessage
 
 # Bibliotecas de Áudio e IA
 import sounddevice as sd
+import threading   
+import speech_recognition as sr 
 import numpy as np
 import scipy.io.wavfile as wav
 import whisper
@@ -34,6 +36,7 @@ class Hackathon:
         
         self.buffer_audio = queue.Queue()
         self.dados_totais = []
+        self.gravando = False
 
     def _enviar_email(self, destinatario, assunto, corpo, anexos):
         """Envia e-mail com múltiplos anexos (Professor e Aluno)."""
@@ -73,23 +76,60 @@ class Hackathon:
             print(status, file=sys.stderr)
         self.buffer_audio.put(indata.copy())
 
+    def _escutar_comando_voz(self):
+        """Thread secundária: escuta a palavra 'parar' para encerrar a gravação."""
+        reconhecedor = sr.Recognizer()
+        # Nota: Usamos o microfone padrão do SO
+        with sr.Microphone() as source:
+            reconhecedor.adjust_for_ambient_noise(source, duration=1)
+            while self.gravando:
+                try:
+                    # Ouve fragmentos curtos para checar a flag self.gravando frequentemente
+                    audio = reconhecedor.listen(source, phrase_time_limit=3)
+                    texto = reconhecedor.recognize_google(audio, language='pt-BR').lower()
+                    
+                    if "parar" in texto:
+                        print(f"\n[COMANDO DE VOZ DETECTADO: {texto.upper()}]")
+                        self.gravando = False
+                        break
+                except (sr.UnknownValueError, sr.WaitTimeoutError):
+                    continue
+                except sr.RequestError:
+                    print("Erro no serviço de reconhecimento de voz.")
+                    break
+
     def gravar_e_salvar(self):
-        """Fase 1: Gravação (Para com CTRL+C)."""
+        """Fase 1: Gravação (Para com CTRL+C ou comando de voz 'parar')."""
         self.dados_totais = []
+        self.gravando = True
+        
+        # Inicia a Thread para o comando de voz
+        thread_voz = threading.Thread(target=self._escutar_comando_voz, daemon=True)
+        thread_voz.start()
+
         print("\n--- STATUS: GRAVANDO ---")
-        print("Pressione CTRL+C para gerar os relatorios do Professor e Aluno.")
+        print("Diga 'PARAR' ou pressione CTRL+C para gerar os relatorios.")
         
         try:
             with sd.InputStream(samplerate=self.frequencia, channels=self.canais, callback=self.callback_audio):
-                while True:
-                    self.dados_totais.append(self.buffer_audio.get())
+                while self.gravando:
+                    try:
+                        # Timeout para o loop verificar a flag self.gravando periodicamente
+                        dado = self.buffer_audio.get(timeout=0.5)
+                        self.dados_totais.append(dado)
+                    except queue.Empty:
+                        continue
         except KeyboardInterrupt:
-            print("\n--- GRAVACAO FINALIZADA ---")
-            if self.dados_totais:
-                audio_final = np.concatenate(self.dados_totais, axis=0)
-                wav.write(self.arquivo_audio, self.frequencia, audio_final)
-                print(f"Audio salvo: {self.arquivo_audio}")
-                return True
+            print("\n--- INTERRUPÇÃO VIA TECLADO ---")
+            self.gravando = False
+
+        # Finalização da gravação
+        print("\n--- GRAVACAO FINALIZADA ---")
+        if self.dados_totais:
+            audio_final = np.concatenate(self.dados_totais, axis=0)
+            wav.write(self.arquivo_audio, self.frequencia, audio_final)
+            print(f"Audio salvo: {self.arquivo_audio}")
+            return True
         return False
 
     def transcrever_baixo_recurso(self):
@@ -126,103 +166,103 @@ class Hackathon:
         # 1. Relatorio do Professor (Foco em didatica e pontos-chave)
         res_prof = self.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": f"Você é um especialista em pedagogia e análise educacional.
-Seu objetivo é analisar tecnicamente a transcrição de uma aula do ensino médio
-e gerar um relatório formal para o PROFESSOR.
+            messages=[{"role": "user", "content": f"""Você é um especialista em pedagogia e análise educacional.
+            Seu objetivo é analisar tecnicamente a transcrição de uma aula do ensino médio
+            e gerar um relatório formal para o PROFESSOR.
 
-REGRAS IMPORTANTES:
-- NÃO invente conteúdos que não estejam presentes na transcrição.
-- Ignore erros de fala, repetições, informalidades e interrupções.
-- Perguntas de alunos devem ser consideradas apenas se contribuírem para o entendimento do conteúdo.
-- Preserve a sequência temporal da aula ao descrever a estrutura.
-- Use linguagem formal, clara e objetiva.
-- A aula pode ser de qualquer área do conhecimento.
+            REGRAS IMPORTANTES:
+            - NÃO invente conteúdos que não estejam presentes na transcrição.
+            - Ignore erros de fala, repetições, informalidades e interrupções.
+            - Perguntas de alunos devem ser consideradas apenas se contribuírem para o entendimento do conteúdo.
+            - Preserve a sequência temporal da aula ao descrever a estrutura.
+            - Use linguagem formal, clara e objetiva.
+            - A aula pode ser de qualquer área do conhecimento.
 
-TAREFA:
-A partir da transcrição fornecida, produza um RELATÓRIO TÉCNICO contendo
-EXATAMENTE as seções abaixo:
+            TAREFA:
+            A partir da transcrição fornecida, produza um RELATÓRIO TÉCNICO contendo
+            EXATAMENTE as seções abaixo:
 
-1. Identificação Geral da Aula
-   - Duração estimada
-   - Tipo de aula (expositiva)
-   - Público-alvo (Ensino Médio)
+            1. Identificação Geral da Aula
+            - Duração estimada
+            - Tipo de aula (expositiva)
+            - Público-alvo (Ensino Médio)
 
-2. Estrutura da Aula
-   - Descrição cronológica das etapas da aula
-   - Organização dos conteúdos ao longo do tempo
+            2. Estrutura da Aula
+            - Descrição cronológica das etapas da aula
+            - Organização dos conteúdos ao longo do tempo
 
-3. Principais Conceitos Abordados
-   - Lista dos conceitos centrais explicados
-   - Breve descrição de cada conceito, com base no que foi dito em aula
+            3. Principais Conceitos Abordados
+            - Lista dos conceitos centrais explicados
+            - Breve descrição de cada conceito, com base no que foi dito em aula
 
-4. Pontos Fortes da Aula
-   - Aspectos positivos da condução didática
-   - Clareza, exemplos, sequência lógica, interação relevante
+            4. Pontos Fortes da Aula
+            - Aspectos positivos da condução didática
+            - Clareza, exemplos, sequência lógica, interação relevante
 
-5. Pontos Fracos ou Oportunidades de Melhoria
-   - Dificuldades percebidas
-   - Momentos de possível confusão, dispersão ou excesso de conteúdo
+            5. Pontos Fracos ou Oportunidades de Melhoria
+            - Dificuldades percebidas
+            - Momentos de possível confusão, dispersão ou excesso de conteúdo
 
-6. Sugestões Pedagógicas
-   - Sugestões CONCRETAS e aplicáveis
-   - Foco em:
-     • Didática
-     • Organização do conteúdo
-     • Engajamento dos alunos
-     • Avaliação e aprendizagem
+            6. Sugestões Pedagógicas
+            - Sugestões CONCRETAS e aplicáveis
+            - Foco em:
+                • Didática
+                • Organização do conteúdo
+                • Engajamento dos alunos
+                • Avaliação e aprendizagem
 
-FORMATO:
-- Texto estruturado em tópicos e parágrafos curtos
-- Não utilize emojis
-- Não inclua opinião pessoal fora do escopo pedagógico
+            FORMATO:
+            - Texto estruturado em tópicos e parágrafos curtos
+            - Não utilize emojis
+            - Não inclua opinião pessoal fora do escopo pedagógico
 
-TRANSCRIÇÃO DA AULA: {texto[:10000]}"}]
+            TRANSCRIÇÃO DA AULA: {texto[:10000]}"""}]
         )
         conteudo_prof = res_prof.choices[0].message.content
 
         # 2. Guia do Aluno (Foco em resumo e exercicios)
         res_aluno = self.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": f"Você é um professor experiente do ensino médio.
-Seu objetivo é criar um GUIA DE ESTUDOS PARA ALUNOS
-com base na transcrição de uma aula expositiva.
+            messages=[{"role": "user", "content": f"""Você é um professor experiente do ensino médio.
+            Seu objetivo é criar um GUIA DE ESTUDOS PARA ALUNOS
+            com base na transcrição de uma aula expositiva.
 
-REGRAS IMPORTANTES:
-- NÃO invente conteúdos que não estejam presentes na transcrição.
-- Ignore erros de fala, repetições, informalidades e interrupções.
-- Preserve a sequência lógica e pedagógica do conteúdo.
-- Use linguagem clara, acessível e adequada ao ensino médio.
-- O guia deve ajudar o aluno a estudar sozinho.
+            REGRAS IMPORTANTES:
+            - NÃO invente conteúdos que não estejam presentes na transcrição.
+            - Ignore erros de fala, repetições, informalidades e interrupções.
+            - Preserve a sequência lógica e pedagógica do conteúdo.
+            - Use linguagem clara, acessível e adequada ao ensino médio.
+            - O guia deve ajudar o aluno a estudar sozinho.
 
-TAREFA:
-Com base na transcrição fornecida, produza um GUIA DE ESTUDOS contendo
-EXATAMENTE as seções abaixo:
+            TAREFA:
+            Com base na transcrição fornecida, produza um GUIA DE ESTUDOS contendo
+            EXATAMENTE as seções abaixo:
 
-1. Tema da Aula
-   - Identifique claramente o tema central trabalhado
+            1. Tema da Aula
+               - Identifique claramente o tema central trabalhado
 
-2. Resumo da Aula
-   - Resumo moderadamente técnico
-   - Explique os principais conceitos com clareza
-   - Use exemplos simples, quando apropriado
-   - Evite jargões excessivos
+            2. Resumo da Aula
+               - Resumo moderadamente técnico
+               - Explique os principais conceitos com clareza
+               - Use exemplos simples, quando apropriado
+               - Evite jargões excessivos
 
-3. Conceitos-Chave
-   - Lista dos conceitos mais importantes da aula
-   - Breve explicação de cada um
+            3. Conceitos-Chave
+               - Lista dos conceitos mais importantes da aula
+               - Breve explicação de cada um
 
-4. Exercícios de Fixação
-   - Crie exatamente 3 exercícios
-   - Misture exercícios conceituais e práticos
-   - Forneça APENAS o enunciado (sem gabarito)
+            4. Exercícios de Fixação
+               - Crie exatamente 3 exercícios
+               - Misture exercícios conceituais e práticos
+               - Forneça APENAS o enunciado (sem gabarito)
 
-FORMATO:
-- Linguagem direta e didática
-- Estrutura organizada em tópicos
-- Não utilize emojis
-- Não inclua informações que não tenham sido abordadas na aula
+            FORMATO:
+            - Linguagem direta e didática
+            - Estrutura organizada em tópicos
+            - Não utilize emojis
+            - Não inclua informações que não tenham sido abordadas na aula
 
-TRANSCRIÇÃO DA AULA: {texto[:10000]}"}]
+            TRANSCRIÇÃO DA AULA: {texto[:10000]}"""}]
         )
         conteudo_aluno = res_aluno.choices[0].message.content
 
